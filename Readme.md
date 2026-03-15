@@ -2,6 +2,12 @@
 
 A collection of shellcode payloads, loaders, and encoders for red teaming and research. It includes payloads and loaders capable of bypassing antivirus software such as Windows Defender, Avira, McAfee, and others. This collection is sourced from the open-source community as well as the author’s own research, and the repository will continue to grow over time
 
+# Please Take a Note
+
+Please dont upload on Virus Total or Virus scanner sandbox machine in other platform 
+
+Tested date "16 March 2026"
+
 ## Requirements  
 
 - IDE code editor like Microsoft Visual Studio Code, Code Blocks and etc 
@@ -37,7 +43,7 @@ You can integrated with your own C2 or available C2 for example
 2. Your own C2 server 
 3. Available C2 server like Cobalt, Adaptix and so on 
 
-Gere the image 
+Here the image 
 
 Tested Adaptix C2 
 
