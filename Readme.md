@@ -42,6 +42,7 @@ You can integrated with your own C2 or available C2 for example
 1. Use API msfrpc and msfconsole (metasploit framework)
 2. Your own C2 server 
 3. Available C2 server like Cobalt, Adaptix and so on 
+4. Check the code for compile and usage the payload and loader 
 
 Here the image 
 
