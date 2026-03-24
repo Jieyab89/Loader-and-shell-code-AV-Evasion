@@ -62,6 +62,8 @@ Logen API Encryption
 
 # Maintence or Problem Solving (Troubleshooting)
 
+## php troubleshooting
+
 If you're using PHP as shellcode and an API and want to customize settings such as file size limits and maximum execution time, you can modify them in your PHP.ini file. Check the web server you've installed or use Linux or Windows commands to locate your PHP.ini file. Here's an example of a custom php.ini configuration
 
 ```
