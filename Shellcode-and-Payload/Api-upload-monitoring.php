@@ -105,6 +105,8 @@ if (!move_uploaded_file($_FILES['file']['tmp_name'], $dest)) {
     respond(500, 'Failed to save file');
 }
 
+// test for debug 
+
 $log = UPLOAD_DIR . '/upload.log';
 $line = date('Y-m-d H:i:s') . "\t" . $pc . "\t" . basename($dest) . "\n";
 @file_put_contents($log, $line, FILE_APPEND | LOCK_EX);

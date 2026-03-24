@@ -150,6 +150,8 @@ fn run(args: &[String]) -> Result<(), String> {
     }
 }
 
+// If u want use by call path or filename 
+
 /* 
 fn read_file(path: &str) -> Result<Vec<u8>, String> {
     if !std::path::Path::new(path).exists() {
@@ -164,13 +166,14 @@ fn read_file(path: &str) -> Result<Vec<u8>, String> {
 
 */ 
 
+// If want use url 
+
 fn read_file(path: &str) -> Result<Vec<u8>, String> {
-    // 🔥 DETECT URL
     if path.starts_with("http://") || path.starts_with("https://") {
         return fetch_from_url(path);
     }
 
-    // fallback ke file lokal (kode lama)
+    // fallback
     if !Path::new(path).exists() {
         return Err(format!("File not found: {}", path));
     }

@@ -123,6 +123,18 @@ static const char* BLOCKED_APPS[] = {
     "VirtualBoxVM.exe",
     "VBoxHeadless.exe",
 
+    /* ──ANTI VIRUS MACHINES ──────────────────────────────────── 
+    "MsMpEng.exe", 
+    "MpDefenderCoreService.exe", 
+    "NisSrv.exe", 
+    "Avira.ServiceHost.exe", 
+    "avguard.exe", 
+    "avcenter.exe", 
+    "avwebgrd.exe", 
+    "avsched3.exe", 
+    "avgnt.exe"
+    */
+
     /* ── CUSTOM ─────────────────────────────────────────────── */
     /* "customapp.exe", */
 };

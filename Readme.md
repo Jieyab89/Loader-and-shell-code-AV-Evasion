@@ -60,3 +60,23 @@ Logen API Encryption
 
 <img width="1365" height="579" alt="image" src="https://github.com/user-attachments/assets/95b80b32-f9aa-4754-82e7-da5e84cb88cc" />
 
+# Maintence or Problem Solving
+
+If you're using PHP as shellcode and an API and want to customize settings such as file size limits and maximum execution time, you can modify them in your PHP.ini file. Check the web server you've installed or use Linux or Windows commands to locate your PHP.ini file. Here's an example of a custom php.ini configuration
+
+```
+upload_max_filesize = 10M
+post_max_size = 12M
+memory_limit = 128M
+max_execution_time = 60
+```
+
+## Notes 
+
+### php.ini 
+
+- On php.ini u can do a comment on variabel or u can change the value at variabel 
+
+### Other 
+
+If there is any issue and trouble i will update on here. Please let me know  
