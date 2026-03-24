@@ -2,7 +2,7 @@
 
 If you want to contrib. Following the format on source code 
 
-example add the comment for each your source code. Add the auhor name and add how to compile and usage, please do not obfuscate your code 
+Example add the comment for each your source code. Add the author name and add how to compile and usage, please do not obfuscate your code 
 
 ```
 /*
@@ -28,4 +28,4 @@ example add the comment for each your source code. Add the auhor name and add ho
 */
 ```
 
-After that on pull request description, please make a documentation and proof your code work and compile how to usage with the image 
+After that on pull request description, please make a documentation and proof your code work and compile how to usage with the image (for proof)

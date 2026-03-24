@@ -4,8 +4,10 @@ A collection of shellcode payloads, loaders, and encoders for red teaming and re
 
 # Please Take a Note
 
-Please dont upload on Virus Total or Virus scanner sandbox machine in other platform 
+For educational purposes only!
 
+> Please dont upload on Virus Total or virus scanner sandbox machine in other platform 
+>
 Tested date "16 March 2026"
 
 ## Requirements  
@@ -42,7 +44,7 @@ You can integrated with your own C2 or available C2 for example
 1. Use API msfrpc and msfconsole (metasploit framework)
 2. Your own C2 server 
 3. Available C2 server like Cobalt, Adaptix and so on 
-4. Check the code for compile and usage the payload and loader 
+4. Check and read the code for compile and usage the payload and loader 
 
 Here the image 
 
