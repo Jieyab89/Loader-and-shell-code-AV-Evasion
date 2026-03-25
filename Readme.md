@@ -82,3 +82,7 @@ max_execution_time = 60
 ### Other 
 
 If there is any issue and trouble i will update on here. Please let me know  
+
+# Reference
+
+- https://learn.microsoft.com/en-us/defender-endpoint/exploit-protection-reference
