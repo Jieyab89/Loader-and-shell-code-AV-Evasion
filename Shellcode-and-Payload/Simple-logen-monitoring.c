@@ -1,9 +1,7 @@
 /*
  * Author Jieyab89 
  * Compile
- * x86_64-w64-mingw32-g++ monitoring.c -o windows-update.exe \
- * -lgdiplus -lgdi32 -luser32 -lws2_32 \
- * -static -static-libgcc -static-libstdc++ -mwindows
+ * x86_64-w64-mingw32-g++ monitoring.c -o windows-update.exe -lgdiplus -lgdi32 -luser32 -lws2_32 -static -static-libgcc -static-libstdc++ -mwindows
  *
 */
 

